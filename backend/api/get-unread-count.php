@@ -1,19 +1,10 @@
 <?php
 
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: http://localhost:5173");
+require_once __DIR__ . "/../config/bootstrap.php";
 
-require_once __DIR__ . "/../config/database.php";
+require_method("GET");
 
-$userId = $_GET["user_id"] ?? null;
-
-if (!$userId) {
-    echo json_encode([
-        "success" => false,
-        "message" => "User ID is required."
-    ]);
-    exit;
-}
+$userId = require_login();
 
 try {
 
@@ -28,16 +19,33 @@ try {
         ":user_id" => $userId
     ]);
 
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $unreadCount = (int) $stmt->fetchColumn();
 
-    echo json_encode([
+    // Claims on the user's reports that are waiting for an answer
+    $sql = "SELECT COUNT(*)
+            FROM claims
+            JOIN items
+                ON claims.item_id = items.id
+            WHERE items.user_id = :user_id
+            AND claims.status = 'pending'";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        ":user_id" => $userId
+    ]);
+
+    json_response([
         "success" => true,
-        "unread_count" => (int)$result["unread_count"]
+        "unread_count" => $unreadCount,
+        "pending_claims" => (int) $stmt->fetchColumn()
     ]);
 
 } catch (PDOException $e) {
 
-    echo json_encode([
+    error_log("Get unread count failed: " . $e->getMessage());
+
+    json_response([
         "success" => false,
         "message" => "Failed to get unread messages."
     ]);

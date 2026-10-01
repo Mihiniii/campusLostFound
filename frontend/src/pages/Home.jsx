@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_URL, apiFetch } from "../api.js";
 import { Link, useNavigate } from "react-router-dom";
 
 function Home() {
@@ -20,8 +21,8 @@ function Home() {
     const fetchItems = async () => {
       try {
         const [lostResponse, foundResponse] = await Promise.all([
-          fetch("http://localhost:8000/api/lost-items.php"),
-          fetch("http://localhost:8000/api/found-items.php"),
+          apiFetch("lost-items.php"),
+          apiFetch("found-items.php"),
         ]);
 
         const lostData = await lostResponse.json();
@@ -240,7 +241,7 @@ function Home() {
 
                       {item.image_url ? (
                         <img
-                          src={`http://localhost:8000/${item.image_url}`}
+                          src={`${API_URL}/${item.image_url}`}
                           alt={item.title}
                         />
                       ) : (
@@ -366,7 +367,7 @@ function Home() {
 
                   {item.image_url ? (
                     <img
-                      src={`http://localhost:8000/${item.image_url}`}
+                      src={`${API_URL}/${item.image_url}`}
                       alt={item.title}
                     />
                   ) : (

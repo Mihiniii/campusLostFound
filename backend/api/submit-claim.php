@@ -1,47 +1,84 @@
 <?php
 
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+require_once __DIR__ . "/../config/bootstrap.php";
 
-if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
-    exit;
+require_method("POST");
+
+// The claim is always made by the logged-in user
+$user_id = require_login();
+
+$data = read_json();
+
+$item_id = positive_int($data["item_id"] ?? null);
+$message = trim((string) ($data["message"] ?? ""));
+
+if (!$item_id || $message === "") {
+    json_response([
+        "success" => false,
+        "message" => "Item and message are required."
+    ]);
 }
 
-require_once __DIR__ . "/../config/database.php";
-
-$data = json_decode(file_get_contents("php://input"), true);
-
-$item_id = $data["item_id"] ?? null;
-$user_id = $data["user_id"] ?? null;
-$message = trim($data["message"] ?? "");
-
-if (!$item_id || !$user_id || !$message) {
-    echo json_encode([
+if (mb_strlen($message) > 2000) {
+    json_response([
         "success" => false,
-        "message" => "Item, user and message are required."
+        "message" => "Message is too long."
     ]);
-    exit;
 }
 
 try {
 
     // Check item exists
     $stmt = $pdo->prepare(
-        "SELECT id FROM items WHERE id = :item_id"
+        "SELECT id, user_id, status FROM items WHERE id = :item_id"
     );
 
     $stmt->execute([
         ":item_id" => $item_id
     ]);
 
-    if (!$stmt->fetch()) {
-        echo json_encode([
+    $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$item) {
+        json_response([
             "success" => false,
             "message" => "Item not found."
         ]);
-        exit;
+    }
+
+    if ((int) $item["user_id"] === $user_id) {
+        json_response([
+            "success" => false,
+            "message" => "You cannot claim your own report."
+        ]);
+    }
+
+    if ($item["status"] !== "active") {
+        json_response([
+            "success" => false,
+            "message" => "This item has already been returned."
+        ]);
+    }
+
+    // One open claim per user for each item
+    $stmt = $pdo->prepare(
+        "SELECT id
+         FROM claims
+         WHERE item_id = :item_id
+           AND user_id = :user_id
+           AND status = 'pending'"
+    );
+
+    $stmt->execute([
+        ":item_id" => $item_id,
+        ":user_id" => $user_id
+    ]);
+
+    if ($stmt->fetch()) {
+        json_response([
+            "success" => false,
+            "message" => "You already have a claim waiting for an answer on this item."
+        ]);
     }
 
     // Insert claim
@@ -56,14 +93,16 @@ try {
         ":message" => $message
     ]);
 
-    echo json_encode([
+    json_response([
         "success" => true,
-        "message" => "Claim submitted successfully."
+        "message" => "Claim submitted successfully. The reporter will review it."
     ]);
 
 } catch (PDOException $e) {
 
-    echo json_encode([
+    error_log("Submit claim failed: " . $e->getMessage());
+
+    json_response([
         "success" => false,
         "message" => "Failed to submit claim."
     ]);

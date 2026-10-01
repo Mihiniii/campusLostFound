@@ -1,45 +1,81 @@
 import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { apiFetch, apiPost } from "../api.js";
 
+// Messages are grouped into conversations.
+// A conversation = the messages with one other user about one item.
+// The open conversation is kept in the address: /messages?item=5&user=2
 function Inbox() {
   const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
 
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const itemId = Number(searchParams.get("item")) || null;
+  const otherId = Number(searchParams.get("user")) || null;
+
+  const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Reply states
+  // New message states
+  const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState(null);
-  const [replyText, setReplyText] = useState("");
-  const [sendingReply, setSendingReply] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  // Message references for smooth scrolling
-  const messageRefs = useRef({});
+  const bottomRef = useRef(null);
 
+  // Remembers which conversation is open, so a slow answer for an
+  // older conversation is not shown in the new one
+  const openKey = useRef("");
+
+  // Increased after sending a message, so the data is loaded again at once
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Load now, then check for new messages every 5 seconds
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
+    if (!userId) {
       return;
     }
 
-    const fetchMessages = async () => {
+    const key = `${itemId}-${otherId}`;
+    openKey.current = key;
+
+    const refresh = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:8000/api/get-messages.php?user_id=${user.id}`
-        );
+        if (itemId && otherId) {
+          const response = await apiFetch(
+            `get-messages.php?item_id=${itemId}&user_id=${otherId}`
+          );
+
+          const data = await response.json();
+
+          if (data.success && openKey.current === key) {
+            setMessages(data.messages);
+
+            // Only the conversation that is open is marked as read
+            const hasUnread = data.messages.some(
+              (message) =>
+                Number(message.receiver_id) === Number(userId) &&
+                !message.is_read
+            );
+
+            if (hasUnread) {
+              await apiPost("mark-messages-read.php", {
+                item_id: itemId,
+                user_id: otherId,
+              });
+            }
+          }
+        }
+
+        const response = await apiFetch("get-conversations.php");
 
         const data = await response.json();
 
         if (data.success) {
-          setMessages(data.messages);
-
-          await fetch("http://localhost:8000/api/mark-messages-read.php", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              user_id: user.id,
-            }),
-          });
+          setConversations(data.conversations);
         }
       } catch (error) {
         console.error("Failed to load messages:", error);
@@ -48,63 +84,71 @@ function Inbox() {
       }
     };
 
-    fetchMessages();
-  }, [user]);
+    refresh();
 
-  // Send reply
-  const handleReply = async () => {
-    if (!replyText.trim() || !replyTo) {
+    const interval = setInterval(refresh, 5000);
+
+    return () => clearInterval(interval);
+  }, [userId, itemId, otherId, reloadKey]);
+
+  // Keep the newest message in view
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      block: "nearest",
+    });
+  }, [messages.length]);
+
+  const openConversation = (conversation) => {
+    setMessages([]);
+    setReplyTo(null);
+    setText("");
+
+    setSearchParams({
+      item: conversation.item_id,
+      user: conversation.other_id,
+    });
+  };
+
+  const closeConversation = () => {
+    setMessages([]);
+    setReplyTo(null);
+    setText("");
+
+    setSearchParams({});
+  };
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+
+    if (!text.trim()) {
       return;
     }
 
-    setSendingReply(true);
+    setSending(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/send-message.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sender_id: user.id,
-            receiver_id: replyTo.sender_id,
-            item_id: replyTo.item_id,
-            message: replyText.trim(),
-            reply_to: replyTo.id,
-          }),
-        }
-      );
+      const response = await apiPost("send-message.php", {
+        receiver_id: otherId,
+        item_id: itemId,
+        message: text.trim(),
+        reply_to: replyTo ? replyTo.id : null,
+      });
 
       const data = await response.json();
 
-      console.log("SEND REPLY RESPONSE:", data);
-
       if (data.success) {
-        setReplyText("");
+        setText("");
         setReplyTo(null);
 
-        // Reload messages
-        const messagesResponse = await fetch(
-          `http://localhost:8000/api/get-messages.php?user_id=${user.id}`
-        );
-
-        const messagesData = await messagesResponse.json();
-
-        if (messagesData.success) {
-          setMessages(messagesData.messages);
-        }
-
-        alert("Reply sent successfully!");
+        setReloadKey((key) => key + 1);
       } else {
         alert(data.message);
       }
     } catch (error) {
-      console.error("Failed to send reply:", error);
-      alert("Failed to send reply.");
+      console.error("Failed to send message:", error);
+      alert("Failed to send message.");
     } finally {
-      setSendingReply(false);
+      setSending(false);
     }
   };
 
@@ -125,17 +169,37 @@ function Inbox() {
     );
   }
 
+  const isOpen = Boolean(itemId && otherId);
+
+  const openConversationInfo = conversations.find(
+    (conversation) =>
+      Number(conversation.item_id) === itemId &&
+      Number(conversation.other_id) === otherId
+  );
+
+  // A conversation started from another page has no messages yet,
+  // so its names come from the link that opened it
+  const otherName =
+    openConversationInfo?.other_name ||
+    location.state?.otherName ||
+    "User";
+
+  const itemTitle =
+    openConversationInfo?.item_title ||
+    location.state?.itemTitle ||
+    "Item";
+
   return (
     <div className="messages-page">
 
-      <div className="messages-container">
+      <div className="messages-container inbox-container">
 
         <div className="messages-header">
           <h1>📩 Messages</h1>
           <p>Your conversations about lost and found items.</p>
         </div>
 
-        {messages.length === 0 ? (
+        {conversations.length === 0 && !isOpen ? (
 
           <div className="messages-empty">
 
@@ -154,195 +218,227 @@ function Inbox() {
 
         ) : (
 
-          <div className="messages-list">
+          <div
+            className={`inbox-layout ${
+              isOpen ? "conversation-open" : ""
+            }`}
+          >
 
-            {messages.map((message) => {
+            {/* Conversation list */}
+            <div className="conversation-list">
 
-              const isReceived =
-                Number(message.receiver_id) === Number(user.id);
+              {conversations.map((conversation) => {
 
-              const otherUser = isReceived
-                ? message.sender_name
-                : message.receiver_name;
+                const isActive =
+                  Number(conversation.item_id) === itemId &&
+                  Number(conversation.other_id) === otherId;
 
-              const isReplyTarget =
-                replyTo?.id === message.id;
+                const sentByMe =
+                  Number(conversation.last_sender_id) ===
+                  Number(userId);
 
-              return (
-                <div
-                  ref={(el) => {
-                    messageRefs.current[message.id] = el;
-                  }}
-                  className={`message-card ${
-                    isReceived
-                      ? "received-message"
-                      : "sent-message"
-                  } ${
-                    isReplyTarget
-                      ? "reply-target-message"
-                      : ""
-                  }`}
-                  key={message.id}
-                >
+                return (
+                  <button
+                    type="button"
+                    key={`${conversation.item_id}-${conversation.other_id}`}
+                    className={`conversation-row ${
+                      isActive ? "active-conversation" : ""
+                    }`}
+                    onClick={() => openConversation(conversation)}
+                  >
 
-                  <div className="message-card-top">
+                    <div className="conversation-row-top">
 
-                    <div>
+                      <strong>
+                        {conversation.other_name}
+                      </strong>
 
-                      <h3>
-                        {otherUser}
-                      </h3>
-
-                      <span className="message-direction">
-                        {isReceived
-                          ? "Received"
-                          : "Sent"}
-                      </span>
+                      {conversation.unread_count > 0 && (
+                        <span className="message-badge">
+                          {conversation.unread_count}
+                        </span>
+                      )}
 
                     </div>
 
+                    <span className="conversation-item">
+                      📦 {conversation.item_title}
+                    </span>
+
+                    <span className="conversation-preview">
+                      {sentByMe ? "You: " : ""}
+                      {conversation.last_message}
+                    </span>
+
                     <span className="message-date">
                       {new Date(
-                        message.created_at
+                        conversation.last_at
                       ).toLocaleString()}
                     </span>
 
+                  </button>
+                );
+              })}
+
+            </div>
+
+            {/* Open conversation */}
+            <div className="thread">
+
+              {!isOpen ? (
+
+                <div className="thread-placeholder">
+                  <div className="messages-empty-icon">
+                    💬
                   </div>
 
-                  <div className="message-item">
-                    📦 {message.item_title}
-                  </div>
+                  <p>Select a conversation to read it.</p>
+                </div>
 
-                  {/* Show replied message */}
-                  {message.reply_to &&
-                    message.replied_message && (
-                      <div className="quoted-message">
+              ) : (
+                <>
+                  <div className="thread-header">
 
-                        <div className="quoted-message-label">
-                          ↩ Reply to {message.replied_sender_name}
-                        </div>
-
-                        <p>
-                          "{message.replied_message}"
-                        </p>
-
-                      </div>
-                    )}
-
-                  {/* Current message */}
-                  <p className="message-text">
-                    {message.message}
-                  </p>
-
-                  {/* Reply button */}
-                  {isReceived && !isReplyTarget && (
                     <button
                       type="button"
-                      className="reply-btn"
-                      onClick={() => {
-
-                        setReplyTo(message);
-                        setReplyText("");
-
-                        setTimeout(() => {
-                          messageRefs.current[
-                            message.id
-                          ]?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "center",
-                          });
-                        }, 100);
-
-                      }}
+                      className="thread-back-btn"
+                      onClick={closeConversation}
                     >
-                      ↩ Reply
+                      ← Back
                     </button>
-                  )}
 
-                  {/* Reply form directly below selected message */}
-                  {isReplyTarget && (
-                    <div className="reply-form-inline">
+                    <div>
+                      <h3>{otherName}</h3>
 
-                      <div className="reply-form-header">
-                        <h3>
-                          Reply to {replyTo.sender_name}
-                        </h3>
+                      <Link to={`/item/${itemId}`}>
+                        📦 {itemTitle}
+                      </Link>
+                    </div>
 
-                        <button
-                          type="button"
-                          className="reply-close-btn"
-                          onClick={() => {
-                            setReplyTo(null);
-                            setReplyText("");
-                          }}
+                  </div>
+
+                  <div className="thread-messages">
+
+                    {messages.length === 0 && (
+                      <p className="thread-empty">
+                        No messages yet. Write the first one below.
+                      </p>
+                    )}
+
+                    {messages.map((message) => {
+
+                      const isMine =
+                        Number(message.sender_id) === Number(userId);
+
+                      return (
+                        <div
+                          key={message.id}
+                          className={`bubble ${
+                            isMine ? "my-bubble" : "their-bubble"
+                          }`}
                         >
-                          ✕
-                        </button>
-                      </div>
 
+                          {/* Show replied message */}
+                          {message.reply_to &&
+                            message.replied_message && (
+                              <div className="quoted-message">
+
+                                <div className="quoted-message-label">
+                                  ↩ Reply to {message.replied_sender_name}
+                                </div>
+
+                                <p>
+                                  "{message.replied_message}"
+                                </p>
+
+                              </div>
+                            )}
+
+                          <p className="message-text">
+                            {message.message}
+                          </p>
+
+                          <div className="bubble-footer">
+
+                            <span className="message-date">
+                              {new Date(
+                                message.created_at
+                              ).toLocaleString()}
+                            </span>
+
+                            {!isMine && (
+                              <button
+                                type="button"
+                                className="bubble-reply-btn"
+                                onClick={() => setReplyTo(message)}
+                              >
+                                ↩ Reply
+                              </button>
+                            )}
+
+                          </div>
+
+                        </div>
+                      );
+                    })}
+
+                    <div ref={bottomRef}></div>
+
+                  </div>
+
+                  {/* New message */}
+                  <form
+                    className="thread-form"
+                    onSubmit={handleSend}
+                  >
+
+                    {replyTo && (
                       <div className="replying-to-message">
 
                         <span>
-                          Replying to:
+                          Replying to {replyTo.sender_name}:
                         </span>
 
                         <p>
                           "{replyTo.message}"
                         </p>
 
-                        <small>
-                          {new Date(
-                            replyTo.created_at
-                          ).toLocaleString()}
-                        </small>
+                        <button
+                          type="button"
+                          className="reply-close-btn"
+                          onClick={() => setReplyTo(null)}
+                        >
+                          ✕
+                        </button>
 
                       </div>
+                    )}
+
+                    <div className="thread-form-row">
 
                       <textarea
-                        value={replyText}
-                        onChange={(e) =>
-                          setReplyText(e.target.value)
-                        }
-                        placeholder="Type your reply..."
-                        rows="4"
-                        autoFocus
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        placeholder="Type your message..."
+                        rows="2"
+                        maxLength={2000}
                       />
 
-                      <div className="reply-actions">
-
-                        <button
-                          type="button"
-                          className="reply-cancel-btn"
-                          onClick={() => {
-                            setReplyTo(null);
-                            setReplyText("");
-                          }}
-                        >
-                          Cancel
-                        </button>
-
-                        <button
-                          type="button"
-                          className="reply-send-btn"
-                          onClick={handleReply}
-                          disabled={
-                            sendingReply ||
-                            !replyText.trim()
-                          }
-                        >
-                          {sendingReply
-                            ? "Sending..."
-                            : "Send Reply"}
-                        </button>
-
-                      </div>
+                      <button
+                        type="submit"
+                        className="reply-send-btn"
+                        disabled={sending || !text.trim()}
+                      >
+                        {sending ? "Sending..." : "Send"}
+                      </button>
 
                     </div>
-                  )}
 
-                </div>
-              );
-            })}
+                  </form>
+                </>
+              )}
+
+            </div>
 
           </div>
 

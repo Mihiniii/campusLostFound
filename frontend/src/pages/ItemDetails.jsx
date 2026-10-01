@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_URL, apiFetch } from "../api.js";
 import { useParams, Link, useNavigate } from "react-router-dom";
 
 import {
@@ -32,8 +33,8 @@ function ItemDetails() {
   useEffect(() => {
     const fetchItem = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:8000/api/item-details.php?id=${id}`
+        const response = await apiFetch(
+          `item-details.php?id=${id}`
         );
 
         const data = await response.json();
@@ -78,8 +79,8 @@ function ItemDetails() {
     setSubmitting(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/submit-claim.php",
+      const response = await apiFetch(
+        "submit-claim.php",
         {
           method: "POST",
           headers: {
@@ -87,7 +88,6 @@ function ItemDetails() {
           },
           body: JSON.stringify({
             item_id: item.id,
-            user_id: user.id,
             message: claimMessage.trim(),
           }),
         }
@@ -96,10 +96,16 @@ function ItemDetails() {
       const data = await response.json();
 
       if (data.success) {
-        alert("Claim submitted successfully!");
+        alert(data.message || "Claim submitted successfully!");
 
         setClaimMessage("");
         setShowClaimForm(false);
+
+        // Show the claim as waiting for an answer
+        setItem({
+          ...item,
+          my_claim_status: "pending",
+        });
       } else {
         alert(data.message || "Failed to submit claim.");
       }
@@ -128,16 +134,6 @@ function ItemDetails() {
     return;
   }
 
-  if (!item.reported_by_id) {
-    alert("Reporter information is not available.");
-    return;
-  }
-
-  if (Number(user.id) === Number(item.reported_by_id)) {
-    alert("You cannot send a message to yourself.");
-    return;
-  }
-
   setShowMessageForm(true);
 };
 
@@ -152,24 +148,18 @@ function ItemDetails() {
       return;
     }
 
-    if (!item.reported_by_id) {
-      alert("Reporter information is not available.");
-      return;
-    }
-
     setSendingMessage(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/send-message.php",
+      const response = await apiFetch(
+        "send-message.php",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          // The server sends it to the person who reported the item
           body: JSON.stringify({
-            sender_id: user.id,
-            receiver_id: item.reported_by_id,
             item_id: item.id,
             message: messageText.trim(),
           }),
@@ -224,6 +214,7 @@ function ItemDetails() {
   }
 
   const isLost = item.type === "lost";
+  const isReturned = item.status === "returned";
 
   const latitude = Number(item.latitude);
   const longitude = Number(item.longitude);
@@ -249,7 +240,7 @@ function ItemDetails() {
 
             {item.image_url ? (
               <img
-                src={`http://localhost:8000/${item.image_url}`}
+                src={`${API_URL}/${item.image_url}`}
                 alt={item.title}
                 className="details-image"
               />
@@ -279,6 +270,12 @@ function ItemDetails() {
               >
                 {isLost ? "LOST" : "FOUND"}
               </span>
+
+              {isReturned && (
+                <span className="details-status returned-status">
+                  RETURNED
+                </span>
+              )}
 
             </div>
 
@@ -320,14 +317,17 @@ function ItemDetails() {
                 </div>
               </div>
 
-              <div className="details-info-item">
-                <div className="details-icon">👤</div>
+              {/* Only logged-in users see who reported the item */}
+              {item.reported_by && (
+                <div className="details-info-item">
+                  <div className="details-icon">👤</div>
 
-                <div>
-                  <span>Reported By</span>
-                  <strong>{item.reported_by}</strong>
+                  <div>
+                    <span>Reported By</span>
+                    <strong>{item.reported_by}</strong>
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
 
@@ -391,12 +391,32 @@ function ItemDetails() {
                     Login to Continue
                   </button>
                 </>
+              ) : item.is_owner ? (
+                <>
+                  {/* THE REPORTER */}
+                  <h3>
+                    This is your report
+                  </h3>
+
+                  <p>
+                    Edit it, mark it as returned, or answer claims
+                    from your reports page.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="details-action-btn"
+                    onClick={() => navigate("/my-reports")}
+                  >
+                    Go to My Reports
+                  </button>
+                </>
               ) : (
                 <>
                   {/* Message Button */}
                   <>
                     <h3>
-                      Contact {item.reported_by}
+                      Contact {item.reported_by || "the reporter"}
                     </h3>
 
                     <p>
@@ -420,7 +440,7 @@ function ItemDetails() {
                       <div className="claim-form-header">
 
                         <h3>
-                          Message {item.reported_by}
+                          Message {item.reported_by || "the reporter"}
                         </h3>
 
                         <button
@@ -465,7 +485,30 @@ function ItemDetails() {
                   )}
 
                   {/* Existing Claim Section */}
-                  {isLost ? (
+                  {isReturned ? (
+                    <>
+                      <h3>
+                        <br></br>This item has been returned
+                      </h3>
+
+                      <p>
+                        {item.my_claim_status === "accepted"
+                          ? "Your claim was accepted."
+                          : "It is no longer open for claims."}
+                      </p>
+                    </>
+                  ) : item.my_claim_status === "pending" ? (
+                    <>
+                      <h3>
+                        <br></br>Your claim is waiting for an answer
+                      </h3>
+
+                      <p>
+                        The reporter will review it. You will get a
+                        message when they decide.
+                      </p>
+                    </>
+                  ) : isLost ? (
                     <>
                       <h3>
                         <br></br>Did you find this item?

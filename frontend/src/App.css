@@ -2009,3 +2009,485 @@ a {
 .quoted-message + .message-text {
   margin-top: 12px;
 }
+
+
+/* =========================================================
+   SHARED SMALL PARTS
+========================================================= */
+
+.returned-status {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.danger-btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.danger-btn:hover {
+  background: #fecaca;
+}
+
+.auth-card button:disabled,
+.form-card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.claim-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.claim-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.claim-accepted {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.claim-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+
+/* =========================================================
+   MESSAGES - CONVERSATIONS
+========================================================= */
+
+.inbox-container {
+  max-width: 1100px;
+}
+
+.inbox-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 620px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.conversation-list {
+  overflow-y: auto;
+  border-right: 1px solid #e5e7eb;
+}
+
+.conversation-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  text-align: left;
+}
+
+.conversation-row:hover {
+  background: #f8fafc;
+}
+
+.active-conversation,
+.active-conversation:hover {
+  background: #eef2ff;
+}
+
+.conversation-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 15px;
+  color: #111827;
+}
+
+.conversation-item {
+  font-size: 12px;
+  color: #2563eb;
+}
+
+.conversation-preview {
+  font-size: 13px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.thread-placeholder {
+  margin: auto;
+  text-align: center;
+  color: #777;
+}
+
+.thread-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.thread-header h3 {
+  margin: 0 0 3px;
+  font-size: 16px;
+}
+
+.thread-header a {
+  font-size: 13px;
+  color: #2563eb;
+}
+
+.thread-back-btn {
+  display: none;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #e5e7eb;
+  color: #374151;
+  font-weight: 600;
+}
+
+.thread-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: #f8fafc;
+}
+
+.thread-empty {
+  margin: auto;
+  color: #777;
+  font-size: 14px;
+}
+
+.bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+
+.their-bubble {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+
+.my-bubble {
+  align-self: flex-end;
+  background: #dbeafe;
+}
+
+.bubble .quoted-message {
+  margin: 0 0 8px;
+}
+
+.bubble-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.bubble-reply-btn {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.thread-form {
+  padding: 14px 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.thread-form .replying-to-message {
+  position: relative;
+  padding-right: 45px;
+  margin-bottom: 10px;
+}
+
+.thread-form .replying-to-message p {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thread-form .reply-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.thread-form-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.thread-form-row textarea {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  resize: none;
+  font-size: 14px;
+  outline: none;
+}
+
+.thread-form-row textarea:focus {
+  border-color: #2563eb;
+}
+
+
+/* =========================================================
+   MY REPORTS
+========================================================= */
+
+.report-card-main {
+  display: flex;
+  gap: 16px;
+}
+
+.report-thumb {
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 30px;
+}
+
+.report-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.report-card-info {
+  min-width: 0;
+}
+
+.report-card-info h3 a,
+.message-card h3 a {
+  color: #111827;
+}
+
+.report-card-info h3 a:hover,
+.message-card h3 a:hover {
+  color: #2563eb;
+}
+
+.report-badges {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.report-claims {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.report-claims h4 {
+  margin-bottom: 10px;
+  color: #1f2937;
+}
+
+.claim-row {
+  padding: 14px;
+  margin-bottom: 10px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.claim-row .message-text {
+  margin: 8px 0;
+}
+
+.my-claims-header {
+  margin-top: 40px;
+}
+
+.edit-current-photo {
+  display: block;
+  max-width: 180px;
+  max-height: 180px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+
+/* =========================================================
+   ADMIN
+========================================================= */
+
+.admin-container {
+  max-width: 1100px;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.admin-tabs button {
+  padding: 9px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-weight: 600;
+}
+
+.admin-tabs .active-tab {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: white;
+}
+
+.admin-table-wrapper {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.admin-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.admin-table td a {
+  color: #111827;
+  font-weight: 600;
+}
+
+.admin-table td a:hover {
+  color: #2563eb;
+}
+
+.admin-table .message-direction {
+  display: block;
+  margin-top: 3px;
+}
+
+.admin-table .report-actions {
+  margin-top: 0;
+  flex-wrap: nowrap;
+}
+
+
+/* =========================================================
+   NEW PAGES - SMALLER SCREENS
+========================================================= */
+
+@media (min-width: 651px) and (max-width: 1100px) {
+
+  .navbar {
+    padding: 0 3%;
+  }
+
+  .nav-links {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 760px) {
+
+  /* Messages: show the list or the open conversation, not both */
+
+  .inbox-layout {
+    grid-template-columns: 1fr;
+    height: 75vh;
+  }
+
+  .inbox-layout .thread {
+    display: none;
+  }
+
+  .inbox-layout.conversation-open .conversation-list {
+    display: none;
+  }
+
+  .inbox-layout.conversation-open .thread {
+    display: flex;
+  }
+
+  .conversation-list {
+    border-right: none;
+  }
+
+  .thread-back-btn {
+    display: block;
+  }
+
+  .bubble {
+    max-width: 90%;
+  }
+
+  .admin-table .report-actions {
+    flex-wrap: wrap;
+  }
+}

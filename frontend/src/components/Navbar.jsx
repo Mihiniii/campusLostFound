@@ -1,28 +1,33 @@
 import { Link, useNavigate } from "react-router-dom";
+import { apiFetch } from "../api.js";
 import { useEffect, useState } from "react";
 
 function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingClaims, setPendingClaims] = useState(0);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setUnreadCount(0);
+      setPendingClaims(0);
       return;
     }
 
     const fetchUnreadCount = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:8000/api/get-unread-count.php?user_id=${user.id}`
+        const response = await apiFetch(
+          "get-unread-count.php"
         );
 
         const data = await response.json();
 
         if (data.success) {
           setUnreadCount(data.unread_count);
+          setPendingClaims(data.pending_claims);
         }
       } catch (error) {
         console.error("Failed to fetch unread messages:", error);
@@ -34,15 +39,24 @@ function Navbar() {
     const interval = setInterval(fetchUnreadCount, 5000);
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, [userId]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
   const confirmLogout = window.confirm(
     "Are you sure you want to logout?"
   );
 
   if (!confirmLogout) {
     return;
+  }
+
+  // End the session on the server
+  try {
+    await apiFetch("logout.php", {
+      method: "POST",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
   }
 
   localStorage.removeItem("user");
@@ -69,6 +83,23 @@ function Navbar() {
             </span>
           )}
         </Link>
+
+        {user && (
+          <Link to="/my-reports" className="messages-nav-link">
+            My Reports
+
+            {pendingClaims > 0 && (
+              <span className="message-badge">
+                {pendingClaims}
+              </span>
+            )}
+          </Link>
+        )}
+
+        {/* The server checks the role again on every admin request */}
+        {user?.role === "admin" && (
+          <Link to="/admin">Admin</Link>
+        )}
 
         {user ? (
           <>

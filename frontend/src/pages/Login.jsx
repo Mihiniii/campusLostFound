@@ -1,38 +1,55 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { apiPost, openDevLink } from "../api.js";
+import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  try {
-    const response = await fetch(
-      "http://localhost:8000/api/login.php",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      }
+  // Email not verified yet: offer to send the link again
+  const handleNeedsVerification = async () => {
+    const resend = window.confirm(
+      "Please verify your email address before logging in.\n\n" +
+        "Click OK to send the verification link again."
     );
+
+    if (!resend) {
+      return;
+    }
+
+    const response = await apiPost("resend-verification.php", {
+      email,
+    });
 
     const data = await response.json();
 
     alert(data.message);
 
+    openDevLink(data, navigate);
+  };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const response = await apiPost("login.php", {
+      email,
+      password,
+    });
+
+    const data = await response.json();
+
+    if (data.needs_verification) {
+      await handleNeedsVerification();
+      return;
+    }
+
+    alert(data.message);
+
     if (data.success) {
-      if (data.success) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/");
-      }
+      localStorage.setItem("user", JSON.stringify(data.user));
+      navigate("/");
     }
   } catch (error) {
     console.error(error);
@@ -69,6 +86,10 @@ function Login() {
 
           <button type="submit">Login</button>
         </form>
+
+        <p className="auth-link">
+          <Link to="/forgot-password">Forgot your password?</Link>
+        </p>
 
         <p className="auth-link">
           Don't have an account? <a href="/register">Register</a>

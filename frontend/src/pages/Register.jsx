@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiFetch, openDevLink } from "../api.js";
 import { useNavigate } from "react-router-dom";
 
 function Register() {
@@ -18,8 +19,8 @@ const handleSubmit = async (e) => {
   }
 
   try {
-    const response = await fetch(
-      "http://localhost:8000/api/register.php",
+    const response = await apiFetch(
+      "register.php",
       {
         method: "POST",
         headers: {
@@ -41,7 +42,11 @@ const handleSubmit = async (e) => {
       setName("");
       setEmail("");
       setPassword("");
+
+      // The account works after the email address is verified
+      if (!openDevLink(data, navigate)) {
         navigate("/login");
+      }
     }
   } catch (error) {
     console.error(error);

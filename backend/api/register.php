@@ -1,52 +1,46 @@
 <?php
 
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+require_once __DIR__ . "/../config/bootstrap.php";
+require_once __DIR__ . "/../config/account.php";
 
-if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
-    exit;
-}
+require_method("POST");
 
-require_once __DIR__ . "/../config/database.php";
+$data = read_json();
 
-$data = json_decode(file_get_contents("php://input"), true);
-
-$name = trim($data["name"] ?? "");
-$email = trim($data["email"] ?? "");
-$password = $data["password"] ?? "";
+$name = trim((string) ($data["name"] ?? ""));
+$email = trim((string) ($data["email"] ?? ""));
+$password = (string) ($data["password"] ?? "");
 
 // Required field validation
 if ($name === "" || $email === "" || $password === "") {
-    echo json_encode([
+    json_response([
         "success" => false,
         "message" => "All fields are required."
     ]);
-    exit;
+}
+
+// Length validation
+if (mb_strlen($name) > 100 || mb_strlen($email) > 150) {
+    json_response([
+        "success" => false,
+        "message" => "Name or email is too long."
+    ]);
 }
 
 // Email validation
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode([
+    json_response([
         "success" => false,
         "message" => "Please enter a valid email address."
     ]);
-    exit;
 }
 
 // Password validation
-if (
-    strlen($password) < 8 ||
-    !preg_match('/[A-Z]/', $password) ||
-    !preg_match('/[a-z]/', $password) ||
-    !preg_match('/[0-9]/', $password)
-) {
-    echo json_encode([
+if (!valid_password($password)) {
+    json_response([
         "success" => false,
-        "message" => "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number."
+        "message" => PASSWORD_RULE_MESSAGE
     ]);
-    exit;
 }
 
 // Hash password
@@ -54,8 +48,11 @@ $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
 try {
 
+    $pdo->beginTransaction();
+
     $sql = "INSERT INTO users (name, email, password)
-            VALUES (:name, :email, :password)";
+            VALUES (:name, :email, :password)
+            RETURNING id";
 
     $stmt = $pdo->prepare($sql);
 
@@ -65,22 +62,35 @@ try {
         ":password" => $hashedPassword
     ]);
 
-    echo json_encode([
+    $userId = (int) $stmt->fetchColumn();
+
+    // The account can be used after the email address is verified
+    $link = send_verification_email($pdo, $userId, $email, $name);
+
+    $pdo->commit();
+
+    json_response([
         "success" => true,
-        "message" => "Account created successfully!"
-    ]);
+        "message" => "Account created! Check your email for a link to verify your address."
+    ] + dev_link($link));
 
 } catch (PDOException $e) {
 
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
     if ($e->getCode() === "23505") {
-        echo json_encode([
+        json_response([
             "success" => false,
             "message" => "Email already exists."
         ]);
-    } else {
-        echo json_encode([
-            "success" => false,
-            "message" => "Registration failed."
-        ]);
     }
+
+    error_log("Register failed: " . $e->getMessage());
+
+    json_response([
+        "success" => false,
+        "message" => "Registration failed."
+    ]);
 }

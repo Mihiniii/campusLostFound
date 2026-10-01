@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiFetch } from "../api.js";
 import {
   MapContainer,
   TileLayer,
@@ -44,8 +45,8 @@ function ReportLostItem() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:8000/api/categories.php"
+        const response = await apiFetch(
+          "categories.php"
         );
 
         const data = await response.json();
@@ -96,8 +97,8 @@ function ReportLostItem() {
         formData.append("image", image);
       }
 
-      const response = await fetch(
-        "http://localhost:8000/api/report-lost.php",
+      const response = await apiFetch(
+        "report-lost.php",
         {
           method: "POST",
           body: formData,

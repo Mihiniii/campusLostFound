@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { API_URL, apiFetch } from "../api.js";
 import { useNavigate } from "react-router-dom";
 
 function LostItems() {
@@ -11,8 +12,8 @@ function LostItems() {
   useEffect(() => {
     const fetchLostItems = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:8000/api/lost-items.php"
+        const response = await apiFetch(
+          "lost-items.php"
         );
 
         const data = await response.json();
@@ -90,7 +91,7 @@ function LostItems() {
 
                   {item.image_url ? (
                     <img
-                      src={`http://localhost:8000/${item.image_url}`}
+                      src={`${API_URL}/${item.image_url}`}
                       alt={item.title}
                       className="item-photo"
                     />
