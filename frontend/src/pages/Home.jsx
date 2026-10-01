@@ -1,12 +1,22 @@
 import { useEffect, useState } from "react";
 import { API_URL, apiFetch } from "../api.js";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  Handshake,
+  MapPin,
+  Megaphone,
+  MessagesSquare,
+  Package,
+  Search,
+  SearchX,
+} from "lucide-react";
+import ItemCard from "../components/ItemCard.jsx";
 
 function Home() {
-  const navigate = useNavigate();
-
   const [recentItems, setRecentItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] =
@@ -20,13 +30,20 @@ function Home() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const [lostResponse, foundResponse] = await Promise.all([
-          apiFetch("lost-items.php"),
-          apiFetch("found-items.php"),
-        ]);
+        const [lostResponse, foundResponse, categoryResponse] =
+          await Promise.all([
+            apiFetch("lost-items.php"),
+            apiFetch("found-items.php"),
+            apiFetch("categories.php"),
+          ]);
 
         const lostData = await lostResponse.json();
         const foundData = await foundResponse.json();
+        const categoryData = await categoryResponse.json();
+
+        if (categoryData.success) {
+          setCategories(categoryData.categories);
+        }
 
         const lostItems = lostData.success
           ? lostData.items.map((item) => ({
@@ -108,45 +125,122 @@ function Home() {
     setShowResults(false);
   };
 
+  const lostCount = allItems.filter(
+    (item) => item.reportType === "lost"
+  ).length;
+
+  const foundCount = allItems.length - lostCount;
+
   return (
     <div className="home">
 
       {/* Hero Section */}
       <section className="hero">
-        <div className="hero-content">
+        <div className="hero-inner">
 
-          <p className="hero-label">
-            CAMPUS LOST & FOUND
-          </p>
+          <div className="hero-content">
 
-          <h1>
-            Lost something?
-            <br />
-            <span>Let's help you find it.</span>
-          </h1>
+            <p className="hero-label">
+              Campus Lost & Found
+            </p>
 
-          <p className="hero-description">
-            Report lost items, find belongings and help your
-            campus community return what matters.
-          </p>
+            <h1>
+              Lost something?
+              <br />
+              <span>Let's help you find it.</span>
+            </h1>
 
-          <div className="hero-buttons">
+            <p className="hero-description">
+              Report lost items, find belongings and help your
+              campus community return what matters.
+            </p>
 
-            <Link
-              to="/report-lost"
-              className="primary-btn"
-            >
-              Report Lost Item
-            </Link>
+            <div className="hero-buttons">
 
-            <Link
-              to="/report-found"
-              className="secondary-btn"
-            >
-              Report Found Item
-            </Link>
+              <Link
+                to="/report-lost"
+                className="primary-btn"
+              >
+                Report Lost Item
+              </Link>
+
+              <Link
+                to="/report-found"
+                className="secondary-btn"
+              >
+                Report Found Item
+              </Link>
+
+            </div>
+
+            {/* Numbers from the current reports */}
+            {!loading && allItems.length > 0 && (
+              <div className="hero-stats">
+
+                <div>
+                  <strong>{lostCount}</strong>
+                  <span>Lost items open</span>
+                </div>
+
+                <div>
+                  <strong>{foundCount}</strong>
+                  <span>Found items waiting</span>
+                </div>
+
+              </div>
+            )}
 
           </div>
+
+          {/* Latest reports shown as a stack of small cards */}
+          {recentItems.length > 0 && (
+            <div className="hero-visual" aria-hidden="true">
+
+              {recentItems.map((item, index) => (
+                <div
+                  className={`hero-card hero-card-${index + 1}`}
+                  key={`${item.reportType}-${item.id}`}
+                >
+
+                  <div className="hero-card-image">
+                    {item.image_url ? (
+                      <img
+                        src={`${API_URL}/${item.image_url}`}
+                        alt=""
+                      />
+                    ) : (
+                      <Package size={22} strokeWidth={1.5} />
+                    )}
+                  </div>
+
+                  <div className="hero-card-text">
+
+                    <span
+                      className={
+                        item.reportType === "lost"
+                          ? "lost-badge"
+                          : "found-badge"
+                      }
+                    >
+                      {item.reportType === "lost"
+                        ? "Lost"
+                        : "Found"}
+                    </span>
+
+                    <strong>{item.title}</strong>
+
+                    <small>
+                      <MapPin size={12} />
+                      {item.location}
+                    </small>
+
+                  </div>
+
+                </div>
+              ))}
+
+            </div>
+          )}
 
         </div>
       </section>
@@ -155,37 +249,46 @@ function Home() {
       {/* Search Section */}
       <section className="search-section">
 
-        <h2>Find an Item</h2>
+        <div className="search-panel">
 
-        <div className="search-box">
+          <h2>Find an Item</h2>
 
-          <input
-            type="text"
-            placeholder="Search for an item..."
-            value={searchText}
-            onChange={(e) =>
-              setSearchText(e.target.value)
-            }
-            onKeyDown={handleKeyDown}
-          />
+          <div className="search-box">
 
-          <select
-            value={selectedCategory}
-            onChange={(e) =>
-              setSelectedCategory(e.target.value)
-            }
-          >
-            <option>All Categories</option>
-            <option>Electronics</option>
-            <option>Documents</option>
-            <option>Accessories</option>
-            <option>Books</option>
-            <option>Other</option>
-          </select>
+            <div className="search-input">
+              <Search size={18} />
 
-          <button onClick={handleSearch}>
-            Search
-          </button>
+              <input
+                type="text"
+                placeholder="Search by name, place or description..."
+                value={searchText}
+                onChange={(e) =>
+                  setSearchText(e.target.value)
+                }
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+
+            <select
+              value={selectedCategory}
+              onChange={(e) =>
+                setSelectedCategory(e.target.value)
+              }
+            >
+              <option>All Categories</option>
+
+              {categories.map((category) => (
+                <option key={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <button onClick={handleSearch}>
+              Search
+            </button>
+
+          </div>
 
         </div>
 
@@ -196,7 +299,7 @@ function Home() {
             <div className="search-results-header">
 
               <h3>
-                Search Results
+                Search Results ({searchResults.length})
               </h3>
 
               <button
@@ -211,7 +314,7 @@ function Home() {
             {searchResults.length === 0 ? (
 
               <div className="search-no-results">
-                <span>🔍</span>
+                <SearchX size={36} strokeWidth={1.5} />
 
                 <h3>
                   No items found
@@ -227,59 +330,11 @@ function Home() {
               <div className="items-grid">
 
                 {searchResults.map((item) => (
-
-                  <div
-                    className="item-card"
+                  <ItemCard
                     key={`${item.reportType}-${item.id}`}
-                    onClick={() =>
-                      navigate(`/item/${item.id}`)
-                    }
-                  >
-
-                    {/* Image */}
-                    <div className="item-image">
-
-                      {item.image_url ? (
-                        <img
-                          src={`${API_URL}/${item.image_url}`}
-                          alt={item.title}
-                        />
-                      ) : (
-                        <span>📦</span>
-                      )}
-
-                    </div>
-
-                    {/* Badge */}
-                    <span
-                      className={
-                        item.reportType === "lost"
-                          ? "lost-badge"
-                          : "found-badge"
-                      }
-                    >
-                      {item.reportType === "lost"
-                        ? "LOST"
-                        : "FOUND"}
-                    </span>
-
-                    {/* Title */}
-                    <h3>
-                      {item.title}
-                    </h3>
-
-                    {/* Location */}
-                    <p>
-                      📍 {item.location}
-                    </p>
-
-                    {/* Category */}
-                    <small className="recent-category">
-                      {item.category}
-                    </small>
-
-                  </div>
-
+                    item={item}
+                    type={item.reportType}
+                  />
                 ))}
 
               </div>
@@ -298,7 +353,7 @@ function Home() {
         <div className="section-heading">
 
           <div>
-            <p>RECENT REPORTS</p>
+            <p>Recent Reports</p>
 
             <h2>
               Lost & Found Items
@@ -310,6 +365,7 @@ function Home() {
             className="view-all"
           >
             View All
+            <ArrowRight size={16} />
           </Link>
 
         </div>
@@ -332,7 +388,7 @@ function Home() {
           <div className="recent-empty">
 
             <div className="recent-empty-icon">
-              📦
+              <Package size={36} strokeWidth={1.5} />
             </div>
 
             <h3>
@@ -353,68 +409,75 @@ function Home() {
           <div className="items-grid">
 
             {recentItems.map((item) => (
-
-              <div
-                className="item-card"
+              <ItemCard
                 key={`${item.reportType}-${item.id}`}
-                onClick={() =>
-                  navigate(`/item/${item.id}`)
-                }
-              >
-
-                {/* Image */}
-                <div className="item-image">
-
-                  {item.image_url ? (
-                    <img
-                      src={`${API_URL}/${item.image_url}`}
-                      alt={item.title}
-                    />
-                  ) : (
-                    <span>📦</span>
-                  )}
-
-                </div>
-
-
-                {/* Badge */}
-                <span
-                  className={
-                    item.reportType === "lost"
-                      ? "lost-badge"
-                      : "found-badge"
-                  }
-                >
-                  {item.reportType === "lost"
-                    ? "LOST"
-                    : "FOUND"}
-                </span>
-
-
-                {/* Title */}
-                <h3>
-                  {item.title}
-                </h3>
-
-
-                {/* Location */}
-                <p>
-                  📍 {item.location}
-                </p>
-
-
-                {/* Category */}
-                <small className="recent-category">
-                  {item.category}
-                </small>
-
-              </div>
-
+                item={item}
+                type={item.reportType}
+              />
             ))}
 
           </div>
 
         )}
+
+      </section>
+
+
+      {/* How It Works */}
+      <section className="steps-section">
+
+        <div className="section-heading">
+          <div>
+            <p>How It Works</p>
+
+            <h2>
+              Three steps to get it back
+            </h2>
+          </div>
+        </div>
+
+        <div className="steps-grid">
+
+          <div className="step-card">
+            <div className="step-icon">
+              <Megaphone size={22} />
+            </div>
+
+            <h3>1. Report</h3>
+
+            <p>
+              Post what you lost or found with a photo, the date
+              and the exact place on the map.
+            </p>
+          </div>
+
+          <div className="step-card">
+            <div className="step-icon">
+              <MessagesSquare size={22} />
+            </div>
+
+            <h3>2. Connect</h3>
+
+            <p>
+              Message the reporter privately or send a claim
+              with details only the owner would know.
+            </p>
+          </div>
+
+          <div className="step-card">
+            <div className="step-icon">
+              <Handshake size={22} />
+            </div>
+
+            <h3>3. Return</h3>
+
+            <p>
+              Once the claim is accepted, arrange the handover
+              and mark the item as returned.
+            </p>
+          </div>
+
+        </div>
 
       </section>
 

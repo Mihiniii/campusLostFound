@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { apiFetch, apiPost } from "../api.js";
+import { ArrowLeft, MessagesSquare, Package, Reply, X } from "lucide-react";
 
 // Messages are grouped into conversations.
 // A conversation = the messages with one other user about one item.
@@ -195,7 +196,7 @@ function Inbox() {
       <div className="messages-container inbox-container">
 
         <div className="messages-header">
-          <h1>📩 Messages</h1>
+          <h1>Messages</h1>
           <p>Your conversations about lost and found items.</p>
         </div>
 
@@ -204,7 +205,7 @@ function Inbox() {
           <div className="messages-empty">
 
             <div className="messages-empty-icon">
-              💬
+              <MessagesSquare size={36} strokeWidth={1.5} />
             </div>
 
             <h3>No messages yet</h3>
@@ -262,7 +263,7 @@ function Inbox() {
                     </div>
 
                     <span className="conversation-item">
-                      📦 {conversation.item_title}
+                      <Package size={13} /> {conversation.item_title}
                     </span>
 
                     <span className="conversation-preview">
@@ -289,7 +290,7 @@ function Inbox() {
 
                 <div className="thread-placeholder">
                   <div className="messages-empty-icon">
-                    💬
+                    <MessagesSquare size={36} strokeWidth={1.5} />
                   </div>
 
                   <p>Select a conversation to read it.</p>
@@ -304,14 +305,14 @@ function Inbox() {
                       className="thread-back-btn"
                       onClick={closeConversation}
                     >
-                      ← Back
+                      <ArrowLeft size={16} /> Back
                     </button>
 
                     <div>
                       <h3>{otherName}</h3>
 
                       <Link to={`/item/${itemId}`}>
-                        📦 {itemTitle}
+                        <Package size={14} /> {itemTitle}
                       </Link>
                     </div>
 
@@ -344,7 +345,7 @@ function Inbox() {
                               <div className="quoted-message">
 
                                 <div className="quoted-message-label">
-                                  ↩ Reply to {message.replied_sender_name}
+                                  <Reply size={13} /> Reply to {message.replied_sender_name}
                                 </div>
 
                                 <p>
@@ -372,7 +373,7 @@ function Inbox() {
                                 className="bubble-reply-btn"
                                 onClick={() => setReplyTo(message)}
                               >
-                                ↩ Reply
+                                <Reply size={13} /> Reply
                               </button>
                             )}
 
@@ -408,7 +409,7 @@ function Inbox() {
                           className="reply-close-btn"
                           onClick={() => setReplyTo(null)}
                         >
-                          ✕
+                          <X size={14} />
                         </button>
 
                       </div>

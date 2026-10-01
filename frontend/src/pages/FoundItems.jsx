@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { API_URL, apiFetch } from "../api.js";
-import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../api.js";
+import { Link } from "react-router-dom";
+import { Plus, SearchX } from "lucide-react";
+import ItemCard from "../components/ItemCard.jsx";
 
 function FoundItems() {
-  const navigate = useNavigate();
-
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +38,7 @@ function FoundItems() {
         <div className="items-header">
           <div>
             <span className="section-label">
-              CAMPUS LOST & FOUND
+              Campus Lost & Found
             </span>
 
             <h1>Found Items</h1>
@@ -48,9 +48,18 @@ function FoundItems() {
             </p>
           </div>
 
-          <div className="item-count">
-            <strong>{items.length}</strong>
-            <span>Found Items</span>
+          <div className="items-header-side">
+
+            <div className="item-count">
+              <strong>{items.length}</strong>
+              <span>Found Items</span>
+            </div>
+
+            <Link to="/report-found" className="primary-btn">
+              <Plus size={18} />
+              Report Found Item
+            </Link>
+
           </div>
         </div>
 
@@ -65,7 +74,9 @@ function FoundItems() {
         {/* Empty */}
         {!loading && items.length === 0 && (
           <div className="state-message">
-            <div className="empty-icon">🔎</div>
+            <div className="empty-icon">
+              <SearchX size={36} strokeWidth={1.5} />
+            </div>
 
             <h3>No found items yet</h3>
 
@@ -80,88 +91,11 @@ function FoundItems() {
           <div className="items-grid">
 
             {items.map((item) => (
-              <div className="item-card" key={item.id}>
-
-                {/* Image */}
-                <div className="item-image-wrapper">
-
-                  {item.image_url ? (
-                    <img
-                      src={`${API_URL}/${item.image_url}`}
-                      alt={item.title}
-                      className="item-photo"
-                    />
-                  ) : (
-                    <div className="no-image">
-                      <span>📦</span>
-                      <p>No image</p>
-                    </div>
-                  )}
-
-                  <span className="found-status-badge">
-                    FOUND
-                  </span>
-
-                </div>
-
-                {/* Content */}
-                <div className="item-content">
-
-                  {/* Category */}
-                  <span className="category-badge">
-                    {item.category}
-                  </span>
-
-                  {/* Title */}
-                  <h3>{item.title}</h3>
-
-                  {/* Description */}
-                  <p className="item-description">
-                    {item.description}
-                  </p>
-
-                  {/* Meta Information */}
-                  <div className="item-meta">
-
-                    <div className="meta-row">
-                      <span className="meta-icon">📍</span>
-                      <span>{item.location}</span>
-                    </div>
-
-                    <div className="meta-row">
-                      <span className="meta-icon">📅</span>
-                      <span>{item.item_date}</span>
-                    </div>
-
-                  </div>
-
-                  {/* Actions */}
-                  <div className="item-actions">
-
-                    {/* View Details */}
-                    <button
-                      className="view-item-btn"
-                      onClick={() =>
-                        navigate(`/item/${item.id}`)
-                      }
-                    >
-                      View Details
-                    </button>
-
-                    {/* Claim */}
-                    <button
-                      className="claim-item-btn"
-                      onClick={() =>
-                        navigate(`/item/${item.id}`)
-                      }
-                    >
-                      This Is My Item
-                    </button>
-
-                  </div>
-
-                </div>
-              </div>
+              <ItemCard
+                key={item.id}
+                item={item}
+                type="found"
+              />
             ))}
 
           </div>

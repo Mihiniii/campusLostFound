@@ -231,11 +231,11 @@ function ReportFoundItem() {
             <p
               style={{
                 fontSize: "13px",
-                color: "#2563eb",
+                color: "#4f46e5",
                 marginBottom: "20px",
               }}
             >
-              📍 Selected Location:{" "}
+              Selected location:{" "}
               {latitude.toFixed(6)}, {longitude.toFixed(6)}
             </p>
           )}

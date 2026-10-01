@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL, apiFetch } from "../api.js";
+import { ArrowLeft, Calendar, FolderOpen, MapPin, MessageSquare, Package, User, X } from "lucide-react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 
 import {
@@ -207,7 +208,7 @@ function ItemDetails() {
         <h3>Item not found</h3>
 
         <Link to="/lost-items" className="back-link">
-          ← Back to Items
+          <ArrowLeft size={16} /> Back to Items
         </Link>
       </div>
     );
@@ -229,7 +230,7 @@ function ItemDetails() {
           to={isLost ? "/lost-items" : "/found-items"}
           className="back-link"
         >
-          ← Back to {isLost ? "Lost Items" : "Found Items"}
+          <ArrowLeft size={16} /> Back to {isLost ? "Lost Items" : "Found Items"}
         </Link>
 
         {/* Main Card */}
@@ -246,7 +247,7 @@ function ItemDetails() {
               />
             ) : (
               <div className="details-no-image">
-                <span>📦</span>
+                <Package size={48} strokeWidth={1.25} />
                 <p>No image available</p>
               </div>
             )}
@@ -291,7 +292,7 @@ function ItemDetails() {
             <div className="details-info">
 
               <div className="details-info-item">
-                <div className="details-icon">📍</div>
+                <div className="details-icon"><MapPin size={18} /></div>
 
                 <div>
                   <span>Location</span>
@@ -300,7 +301,7 @@ function ItemDetails() {
               </div>
 
               <div className="details-info-item">
-                <div className="details-icon">📅</div>
+                <div className="details-icon"><Calendar size={18} /></div>
 
                 <div>
                   <span>Date</span>
@@ -309,7 +310,7 @@ function ItemDetails() {
               </div>
 
               <div className="details-info-item">
-                <div className="details-icon">📂</div>
+                <div className="details-icon"><FolderOpen size={18} /></div>
 
                 <div>
                   <span>Category</span>
@@ -320,7 +321,7 @@ function ItemDetails() {
               {/* Only logged-in users see who reported the item */}
               {item.reported_by && (
                 <div className="details-info-item">
-                  <div className="details-icon">👤</div>
+                  <div className="details-icon"><User size={18} /></div>
 
                   <div>
                     <span>Reported By</span>
@@ -334,7 +335,7 @@ function ItemDetails() {
             {/* Location Map */}
             <div className="location-map-section">
 
-              <h3>📍 Item Location</h3>
+              <h3><MapPin size={18} /> Item Location</h3>
 
               {Number.isFinite(latitude) &&
               Number.isFinite(longitude) ? (
@@ -429,7 +430,7 @@ function ItemDetails() {
                       className="details-action-btn"
                       onClick={handleMessageClick}
                     >
-                      💬 Send Message
+                      <MessageSquare size={17} /> Send Message
                     </button>
                   </>
 
@@ -451,7 +452,7 @@ function ItemDetails() {
                             setMessageText("");
                           }}
                         >
-                          ×
+                          <X size={20} />
                         </button>
 
                       </div>
@@ -487,8 +488,7 @@ function ItemDetails() {
                   {/* Existing Claim Section */}
                   {isReturned ? (
                     <>
-                      <h3>
-                        <br></br>This item has been returned
+                      <h3 className="action-subheading">This item has been returned
                       </h3>
 
                       <p>
@@ -499,8 +499,7 @@ function ItemDetails() {
                     </>
                   ) : item.my_claim_status === "pending" ? (
                     <>
-                      <h3>
-                        <br></br>Your claim is waiting for an answer
+                      <h3 className="action-subheading">Your claim is waiting for an answer
                       </h3>
 
                       <p>
@@ -510,8 +509,7 @@ function ItemDetails() {
                     </>
                   ) : isLost ? (
                     <>
-                      <h3>
-                        <br></br>Did you find this item?
+                      <h3 className="action-subheading">Did you find this item?
                       </h3>
 
                       <p>
@@ -568,7 +566,7 @@ function ItemDetails() {
                             setClaimMessage("");
                           }}
                         >
-                          ×
+                          <X size={20} />
                         </button>
 
                       </div>

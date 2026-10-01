@@ -132,7 +132,7 @@ function Admin() {
       <div className="messages-container admin-container">
 
         <div className="messages-header">
-          <h1>🛠 Admin</h1>
+          <h1>Admin</h1>
           <p>Manage all reports and users.</p>
         </div>
 
