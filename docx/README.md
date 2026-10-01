@@ -19,7 +19,7 @@ How each feature works is described in [documentation.md](documentation.md).
 
 | Layer    | Technology                                          |
 | -------- | --------------------------------------------------- |
-| Frontend | React 19, Vite, React Router, Leaflet / React Leaflet |
+| Frontend | React 19, Vite, React Router, Leaflet / React Leaflet, Lucide icons |
 | Backend  | PHP (plain PHP scripts, PDO)                        |
 | Database | PostgreSQL                                          |
 | Maps     | OpenStreetMap tiles                                 |
@@ -49,7 +49,7 @@ CampusLostFound/
 └── frontend/
     ├── public/
     └── src/
-        ├── components/            # Navbar
+        ├── components/            # Navbar, Footer, Logo, ItemCard
         ├── pages/                 # One file per page
         ├── api.js                 # API address and request helpers
         ├── App.jsx                # Routes

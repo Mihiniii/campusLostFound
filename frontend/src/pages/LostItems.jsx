@@ -1,11 +1,10 @@
-
 import { useEffect, useState } from "react";
-import { API_URL, apiFetch } from "../api.js";
-import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../api.js";
+import { Link } from "react-router-dom";
+import { Plus, SearchX } from "lucide-react";
+import ItemCard from "../components/ItemCard.jsx";
 
 function LostItems() {
-  const navigate = useNavigate();
-
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +38,7 @@ function LostItems() {
         <div className="items-header">
           <div>
             <span className="section-label">
-              CAMPUS LOST & FOUND
+              Campus Lost & Found
             </span>
 
             <h1>Lost Items</h1>
@@ -49,9 +48,18 @@ function LostItems() {
             </p>
           </div>
 
-          <div className="item-count">
-            <strong>{items.length}</strong>
-            <span>Reported Items</span>
+          <div className="items-header-side">
+
+            <div className="item-count">
+              <strong>{items.length}</strong>
+              <span>Reported Items</span>
+            </div>
+
+            <Link to="/report-lost" className="primary-btn">
+              <Plus size={18} />
+              Report Lost Item
+            </Link>
+
           </div>
         </div>
 
@@ -66,7 +74,9 @@ function LostItems() {
         {/* Empty State */}
         {!loading && items.length === 0 && (
           <div className="state-message">
-            <div className="empty-icon">🔍</div>
+            <div className="empty-icon">
+              <SearchX size={36} strokeWidth={1.5} />
+            </div>
 
             <h3>No lost items yet</h3>
 
@@ -81,78 +91,11 @@ function LostItems() {
           <div className="items-grid">
 
             {items.map((item) => (
-              <div
-                className="item-card"
+              <ItemCard
                 key={item.id}
-              >
-
-                {/* Image */}
-                <div className="item-image-wrapper">
-
-                  {item.image_url ? (
-                    <img
-                      src={`${API_URL}/${item.image_url}`}
-                      alt={item.title}
-                      className="item-photo"
-                    />
-                  ) : (
-                    <div className="no-image">
-                      <span>📦</span>
-                      <p>No image</p>
-                    </div>
-                  )}
-
-                  {/* Lost Badge */}
-                  <span className="status-badge">
-                    LOST
-                  </span>
-
-                </div>
-
-                {/* Content */}
-                <div className="item-content">
-
-                  {/* Category */}
-                  <span className="category-badge">
-                    {item.category}
-                  </span>
-
-                  {/* Title */}
-                  <h3>{item.title}</h3>
-
-                  {/* Description */}
-                  <p className="item-description">
-                    {item.description || "No description provided."}
-                  </p>
-
-                  {/* Meta Information */}
-                  <div className="item-meta">
-
-                    <div className="meta-row">
-                      <span className="meta-icon">📍</span>
-                      <span>{item.location}</span>
-                    </div>
-
-                    <div className="meta-row">
-                      <span className="meta-icon">📅</span>
-                      <span>{item.item_date}</span>
-                    </div>
-
-                  </div>
-
-                  {/* View Details Button */}
-                  <button
-                    type="button"
-                    className="view-item-btn"
-                    onClick={() => navigate(`/item/${item.id}`)}
-                  >
-                    <span>View Details</span>
-                    
-                  </button>
-
-                </div>
-
-              </div>
+                item={item}
+                type="lost"
+              />
             ))}
 
           </div>

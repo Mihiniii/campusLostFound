@@ -172,6 +172,9 @@ Changes to an existing database are kept in `database/migrations/` and applied w
 | `App.jsx` | Defines the routes |
 | `api.js` | The API address and the helpers every page uses to call the API |
 | `components/Navbar.jsx` | Top menu, login state, unread message and waiting claim badges, logout |
+| `components/Logo.jsx` | The logo (map pin with a check mark) used in the navbar and footer |
+| `components/Footer.jsx` | Page footer with links |
+| `components/ItemCard.jsx` | The item card used on the home, lost and found pages |
 | `pages/Home.jsx` | Hero section, search, recent reports |
 | `pages/Login.jsx`, `pages/Register.jsx` | Account pages |
 | `pages/VerifyEmail.jsx` | Opened from the verification email |
@@ -183,7 +186,7 @@ Changes to an existing database are kept in `database/migrations/` and applied w
 | `pages/EditItem.jsx` | Edit a report |
 | `pages/Inbox.jsx` | Conversations and messages |
 | `pages/Admin.jsx` | Admin area |
-| `App.css`, `index.css` | All styling |
+| `App.css`, `index.css` | All styling. The colours, fonts and spacing are defined once at the top of `App.css` |
 
 ### Backend (`backend/`)
 

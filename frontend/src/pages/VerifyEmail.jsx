@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { apiPost } from "../api.js";
+import { CircleCheck, TriangleAlert } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
 // Opened from the link in the verification email: /verify-email?token=...
@@ -50,8 +51,14 @@ function VerifyEmail() {
         {loading ? (
           <p>Verifying your email address...</p>
         ) : (
-          <p>
-            {success ? "✅" : "⚠️"} {message}
+          <p className={success ? "notice notice-success" : "notice notice-error"}>
+            {success ? (
+              <CircleCheck size={18} />
+            ) : (
+              <TriangleAlert size={18} />
+            )}
+
+            {message}
           </p>
         )}
 

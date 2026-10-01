@@ -1,8 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { apiFetch } from "../api.js";
 import { useEffect, useState } from "react";
+import { LogOut, Menu, X } from "lucide-react";
+import Logo from "./Logo.jsx";
 
 function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingClaims, setPendingClaims] = useState(0);
   const navigate = useNavigate();
@@ -65,60 +68,92 @@ function Navbar() {
 
   return (
     <nav className="navbar">
-      <div className="logo">
-        Campus Lost & Found
-      </div>
+      <div className="navbar-inner">
 
-      <div className="nav-links">
-        <Link to="/">Home</Link>
-        <Link to="/lost-items">Lost Items</Link>
-        <Link to="/found-items">Found Items</Link>
-
-        <Link to="/messages" className="messages-nav-link">
-          📩 Messages
-
-          {unreadCount > 0 && (
-            <span className="message-badge">
-              {unreadCount}
-            </span>
-          )}
+        <Link to="/" className="logo" aria-label="Campus Lost & Found home">
+          <Logo />
         </Link>
 
-        {user && (
-          <Link to="/my-reports" className="messages-nav-link">
-            My Reports
+        {/* Menu button, shown on small screens */}
+        <button
+          type="button"
+          className="menu-btn"
+          aria-label="Menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
 
-            {pendingClaims > 0 && (
+        {/* Clicking any link closes the small-screen menu */}
+        <div
+          className={`nav-links ${menuOpen ? "nav-open" : ""}`}
+          onClick={() => setMenuOpen(false)}
+        >
+          <NavLink to="/" end>Home</NavLink>
+          <NavLink to="/lost-items">Lost Items</NavLink>
+          <NavLink to="/found-items">Found Items</NavLink>
+
+          <NavLink to="/messages" className="messages-nav-link">
+            Messages
+
+            {unreadCount > 0 && (
               <span className="message-badge">
-                {pendingClaims}
+                {unreadCount}
               </span>
             )}
-          </Link>
-        )}
+          </NavLink>
 
-        {/* The server checks the role again on every admin request */}
-        {user?.role === "admin" && (
-          <Link to="/admin">Admin</Link>
-        )}
+          {user && (
+            <NavLink to="/my-reports" className="messages-nav-link">
+              My Reports
 
-        {user ? (
-          <>
-            <span className="user-name">
-              Hi, {user.name}
-            </span>
+              {pendingClaims > 0 && (
+                <span className="message-badge">
+                  {pendingClaims}
+                </span>
+              )}
+            </NavLink>
+          )}
 
-            <button
-              onClick={handleLogout}
-              className="logout-btn"
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <Link to="/login" className="login-btn">
-            Login
-          </Link>
-        )}
+          {/* The server checks the role again on every admin request */}
+          {user?.role === "admin" && (
+            <NavLink to="/admin">Admin</NavLink>
+          )}
+
+          <span className="nav-divider"></span>
+
+          {user ? (
+            <>
+              <span className="user-name">
+                <span className="user-avatar">
+                  {user.name?.charAt(0).toUpperCase()}
+                </span>
+
+                {user.name}
+              </span>
+
+              <button
+                onClick={handleLogout}
+                className="logout-btn"
+              >
+                <LogOut size={16} />
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="nav-login-link">
+                Login
+              </Link>
+
+              <Link to="/register" className="login-btn">
+                Sign Up
+              </Link>
+            </>
+          )}
+        </div>
+
       </div>
     </nav>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_URL, apiFetch, apiPost } from "../api.js";
+import { Check, MessageSquare, Package, Pencil, RotateCcw, Trash2 } from "lucide-react";
 
 // The logged-in user's own reports, the claims on them,
 // and the claims the user made on other reports
@@ -123,7 +124,7 @@ function MyReports() {
       <div className="messages-container">
 
         <div className="messages-header">
-          <h1>📋 My Reports</h1>
+          <h1>My Reports</h1>
           <p>Manage the items you reported and answer claims on them.</p>
         </div>
 
@@ -132,7 +133,7 @@ function MyReports() {
           <div className="messages-empty">
 
             <div className="messages-empty-icon">
-              📦
+              <Package size={36} strokeWidth={1.5} />
             </div>
 
             <h3>No reports yet</h3>
@@ -165,7 +166,7 @@ function MyReports() {
                           alt={item.title}
                         />
                       ) : (
-                        <span>📦</span>
+                        <Package size={28} strokeWidth={1.5} />
                       )}
                     </div>
 
@@ -196,8 +197,7 @@ function MyReports() {
                       </h3>
 
                       <span className="message-direction">
-                        {item.category} · 📍 {item.location} · 📅{" "}
-                        {item.item_date}
+                        {item.category} · {item.location} · {item.item_date}
                       </span>
 
                     </div>
@@ -212,7 +212,7 @@ function MyReports() {
                       className="reply-cancel-btn"
                       onClick={() => navigate(`/edit-item/${item.id}`)}
                     >
-                      ✏️ Edit
+                      <Pencil size={15} /> Edit
                     </button>
 
                     {isReturned ? (
@@ -221,7 +221,7 @@ function MyReports() {
                         className="reply-cancel-btn"
                         onClick={() => handleStatus(item, "active")}
                       >
-                        ↩ Mark as Active
+                        <RotateCcw size={15} /> Mark as Active
                       </button>
                     ) : (
                       <button
@@ -229,7 +229,7 @@ function MyReports() {
                         className="reply-send-btn"
                         onClick={() => handleStatus(item, "returned")}
                       >
-                        ✓ Mark as Returned
+                        <Check size={15} /> Mark as Returned
                       </button>
                     )}
 
@@ -238,7 +238,7 @@ function MyReports() {
                       className="danger-btn"
                       onClick={() => handleDelete(item)}
                     >
-                      🗑 Delete
+                      <Trash2 size={15} /> Delete
                     </button>
 
                   </div>
@@ -319,7 +319,7 @@ function MyReports() {
                                 )
                               }
                             >
-                              💬 Message
+                              <MessageSquare size={15} /> Message
                             </button>
 
                           </div>

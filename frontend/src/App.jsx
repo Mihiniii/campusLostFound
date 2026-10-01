@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
 
 import Navbar from "./components/Navbar.jsx";
+import Footer from "./components/Footer.jsx";
 
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
@@ -22,26 +23,32 @@ import Admin from "./pages/Admin.jsx";
 function App() {
   return (
     <BrowserRouter>
-      <Navbar />
+      <div className="app-shell">
+        <Navbar />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/lost-items" element={<LostItems />} />
-        <Route path="/found-items" element={<FoundItems />} />
-        <Route path="/report-lost" element={<ReportLostItem />} />
-        <Route path="/report-found" element={<ReportFoundItem />} />
-        <Route path="/item/:id" element={<ItemDetails />} />
-        <Route path="/edit-item/:id" element={<EditItem />} />
-        <Route path="/my-reports" element={<MyReports />} />
-        <Route path="/messages" element={<Inbox />} />
-        <Route path="/admin" element={<Admin />} />
+        <main className="app-main">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/lost-items" element={<LostItems />} />
+            <Route path="/found-items" element={<FoundItems />} />
+            <Route path="/report-lost" element={<ReportLostItem />} />
+            <Route path="/report-found" element={<ReportFoundItem />} />
+            <Route path="/item/:id" element={<ItemDetails />} />
+            <Route path="/edit-item/:id" element={<EditItem />} />
+            <Route path="/my-reports" element={<MyReports />} />
+            <Route path="/messages" element={<Inbox />} />
+            <Route path="/admin" element={<Admin />} />
 
-      </Routes>
+          </Routes>
+        </main>
+
+        <Footer />
+      </div>
     </BrowserRouter>
   );
 }
