@@ -1,0 +1,5 @@
+# Local backend settings (database password)
+backend/config/config.local.php
+
+# Development mail log
+storage/

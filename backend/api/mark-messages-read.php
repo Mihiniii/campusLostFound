@@ -1,26 +1,23 @@
 <?php
 
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+require_once __DIR__ . "/../config/bootstrap.php";
 
-if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
-    exit;
-}
+require_method("POST");
 
-require_once __DIR__ . "/../config/database.php";
+// A user can only mark their own messages as read
+$userId = require_login();
 
-$data = json_decode(file_get_contents("php://input"), true);
+$data = read_json();
 
-$userId = $data["user_id"] ?? null;
+// Only the opened conversation is marked as read
+$itemId = positive_int($data["item_id"] ?? null);
+$otherId = positive_int($data["user_id"] ?? null);
 
-if (!$userId) {
-    echo json_encode([
+if (!$itemId || !$otherId) {
+    json_response([
         "success" => false,
-        "message" => "User ID is required."
+        "message" => "Item and user are required."
     ]);
-    exit;
 }
 
 try {
@@ -28,22 +25,28 @@ try {
     $sql = "UPDATE messages
             SET is_read = TRUE
             WHERE receiver_id = :user_id
+            AND sender_id = :other_id
+            AND item_id = :item_id
             AND is_read = FALSE";
 
     $stmt = $pdo->prepare($sql);
 
     $stmt->execute([
-        ":user_id" => $userId
+        ":user_id" => $userId,
+        ":other_id" => $otherId,
+        ":item_id" => $itemId
     ]);
 
-    echo json_encode([
+    json_response([
         "success" => true,
         "message" => "Messages marked as read."
     ]);
 
 } catch (PDOException $e) {
 
-    echo json_encode([
+    error_log("Mark messages read failed: " . $e->getMessage());
+
+    json_response([
         "success" => false,
         "message" => "Failed to mark messages as read."
     ]);

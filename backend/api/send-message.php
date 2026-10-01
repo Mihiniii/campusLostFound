@@ -1,22 +1,18 @@
 <?php
 
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+require_once __DIR__ . "/../config/bootstrap.php";
 
-if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
-    exit;
-}
+require_method("POST");
 
-require_once __DIR__ . "/../config/database.php";
+// The sender is always the logged-in user
+$senderId = require_login();
 
-$data = json_decode(file_get_contents("php://input"), true);
+$data = read_json();
 
-$senderId = $data["sender_id"] ?? null;
-$receiverId = $data["receiver_id"] ?? null;
-$itemId = $data["item_id"] ?? null;
-$message = trim($data["message"] ?? "");
+// Without a receiver the message goes to the person who reported the item
+$receiverId = positive_int($data["receiver_id"] ?? null);
+$itemId = positive_int($data["item_id"] ?? null);
+$message = trim((string) ($data["message"] ?? ""));
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +25,17 @@ $message = trim($data["message"] ?? "");
 
 $replyTo = $data["reply_to"] ?? null;
 
+if ($replyTo !== null) {
+    $replyTo = positive_int($replyTo);
+
+    if ($replyTo === null) {
+        json_response([
+            "success" => false,
+            "message" => "Invalid reply message."
+        ]);
+    }
+}
+
 
 /*
 |--------------------------------------------------------------------------
@@ -37,31 +44,20 @@ $replyTo = $data["reply_to"] ?? null;
 */
 
 if (
-    !$senderId ||
-    !$receiverId ||
     !$itemId ||
     $message === ""
 ) {
-    echo json_encode([
+    json_response([
         "success" => false,
         "message" => "All fields are required."
     ]);
-    exit;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Prevent sending message to yourself
-|--------------------------------------------------------------------------
-*/
-
-if ((int)$senderId === (int)$receiverId) {
-    echo json_encode([
+if (mb_strlen($message) > 2000) {
+    json_response([
         "success" => false,
-        "message" => "You cannot send a message to yourself."
+        "message" => "Message is too long."
     ]);
-    exit;
 }
 
 
@@ -74,7 +70,7 @@ try {
     */
 
     $itemStmt = $pdo->prepare(
-        "SELECT id
+        "SELECT id, user_id
          FROM items
          WHERE id = :item_id"
     );
@@ -86,11 +82,30 @@ try {
     $item = $itemStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$item) {
-        echo json_encode([
+        json_response([
             "success" => false,
             "message" => "Item not found."
         ]);
-        exit;
+    }
+
+    $ownerId = (int) $item["user_id"];
+
+    if (!$receiverId) {
+        $receiverId = $ownerId;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Prevent sending message to yourself
+    |--------------------------------------------------------------------------
+    */
+
+    if ($senderId === $receiverId) {
+        json_response([
+            "success" => false,
+            "message" => "You cannot send a message to yourself."
+        ]);
     }
 
 
@@ -113,11 +128,67 @@ try {
     $receiver = $userStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$receiver) {
-        echo json_encode([
+        json_response([
             "success" => false,
             "message" => "Receiver not found."
         ]);
-        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Check the sender is allowed to message this receiver
+    |--------------------------------------------------------------------------
+    | Allowed when:
+    |  - the receiver reported the item, or
+    |  - the receiver has already messaged the sender about this item, or
+    |  - the sender reported the item and the receiver made a claim on it.
+    |--------------------------------------------------------------------------
+    */
+
+    if ($ownerId !== $receiverId) {
+
+        $contactStmt = $pdo->prepare(
+            "SELECT id
+             FROM messages
+             WHERE item_id = :item_id
+               AND sender_id = :receiver_id
+               AND receiver_id = :sender_id
+             LIMIT 1"
+        );
+
+        $contactStmt->execute([
+            ":item_id" => $itemId,
+            ":receiver_id" => $receiverId,
+            ":sender_id" => $senderId
+        ]);
+
+        $allowed = (bool) $contactStmt->fetch();
+
+        if (!$allowed && $ownerId === $senderId) {
+
+            $claimStmt = $pdo->prepare(
+                "SELECT id
+                 FROM claims
+                 WHERE item_id = :item_id
+                   AND user_id = :receiver_id
+                 LIMIT 1"
+            );
+
+            $claimStmt->execute([
+                ":item_id" => $itemId,
+                ":receiver_id" => $receiverId
+            ]);
+
+            $allowed = (bool) $claimStmt->fetch();
+        }
+
+        if (!$allowed) {
+            json_response([
+                "success" => false,
+                "message" => "You cannot message this user about this item."
+            ], 403);
+        }
     }
 
 
@@ -146,11 +217,10 @@ try {
         $originalMessage = $replyStmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$originalMessage) {
-            echo json_encode([
+            json_response([
                 "success" => false,
                 "message" => "Original message not found."
             ]);
-            exit;
         }
 
 
@@ -160,12 +230,11 @@ try {
         |--------------------------------------------------------------------------
         */
 
-        if ((int)$originalMessage["item_id"] !== (int)$itemId) {
-            echo json_encode([
+        if ((int)$originalMessage["item_id"] !== $itemId) {
+            json_response([
                 "success" => false,
                 "message" => "Invalid reply message."
             ]);
-            exit;
         }
 
 
@@ -177,21 +246,20 @@ try {
 
         $validConversation =
             (
-                (int)$originalMessage["sender_id"] === (int)$senderId &&
-                (int)$originalMessage["receiver_id"] === (int)$receiverId
+                (int)$originalMessage["sender_id"] === $senderId &&
+                (int)$originalMessage["receiver_id"] === $receiverId
             )
             ||
             (
-                (int)$originalMessage["sender_id"] === (int)$receiverId &&
-                (int)$originalMessage["receiver_id"] === (int)$senderId
+                (int)$originalMessage["sender_id"] === $receiverId &&
+                (int)$originalMessage["receiver_id"] === $senderId
             );
 
         if (!$validConversation) {
-            echo json_encode([
+            json_response([
                 "success" => false,
                 "message" => "You cannot reply to this message."
-            ]);
-            exit;
+            ], 403);
         }
     }
 
@@ -236,7 +304,7 @@ try {
     |--------------------------------------------------------------------------
     */
 
-    echo json_encode([
+    json_response([
         "success" => true,
         "message" => "Message sent successfully!",
         "message_id" => $pdo->lastInsertId(),
@@ -246,8 +314,10 @@ try {
 
 } catch (PDOException $e) {
 
-    echo json_encode([
+    error_log("Send message failed: " . $e->getMessage());
+
+    json_response([
         "success" => false,
-        "message" => "Database error: " . $e->getMessage()
+        "message" => "Failed to send message. Please try again."
     ]);
 }

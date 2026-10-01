@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiFetch } from "../api.js";
 import {
   MapContainer,
   TileLayer,
@@ -37,6 +38,7 @@ function ReportFoundItem() {
 
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
+  const [image, setImage] = useState(null);
 
   const [categories, setCategories] = useState([]);
 
@@ -44,8 +46,8 @@ function ReportFoundItem() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:8000/api/categories.php"
+        const response = await apiFetch(
+          "categories.php"
         );
 
         const data = await response.json();
@@ -78,26 +80,28 @@ function ReportFoundItem() {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/report-found.php",
+      const formData = new FormData();
+
+      formData.append("title", title);
+      formData.append("category_id", category);
+      formData.append("location", location);
+
+      // Send map coordinates
+      formData.append("latitude", latitude);
+      formData.append("longitude", longitude);
+
+      formData.append("item_date", date);
+      formData.append("description", description);
+
+      if (image) {
+        formData.append("image", image);
+      }
+
+      const response = await apiFetch(
+        "report-found.php",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            title,
-            category_id: category,
-            location,
-
-            // Map coordinates
-            latitude,
-            longitude,
-
-            item_date: date,
-            description,
-          }),
+          body: formData,
         }
       );
 
@@ -116,6 +120,9 @@ function ReportFoundItem() {
 
         setDate("");
         setDescription("");
+        setImage(null);
+
+        document.getElementById("item-image").value = "";
       }
     } catch (error) {
       console.error("Error:", error);
@@ -241,6 +248,18 @@ function ReportFoundItem() {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
+          />
+
+          {/* Photo */}
+          <label>Photo</label>
+
+          <input
+            id="item-image"
+            type="file"
+            accept="image/*"
+            onChange={(e) =>
+              setImage(e.target.files[0])
+            }
           />
 
           {/* Description */}
