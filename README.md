@@ -70,9 +70,9 @@ On most campuses, lost items are tracked through notice boards and "has anyone s
 |:---:|:---:|
 | ![Home](docs/screenshots/home.png) | ![Item Details](docs/screenshots/item-details.png) |
 
-| Report an Item | Inbox |
+| My Reports | Inbox |
 |:---:|:---:|
-| ![Report](docs/screenshots/report.png) | ![Inbox](docs/screenshots/inbox.png) |
+| ![My Reports](docs/screenshots/report.png) | ![Inbox](docs/screenshots/inbox.png) |
 
 ---
 
