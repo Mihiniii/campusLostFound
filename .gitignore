@@ -3,3 +3,23 @@ backend/config/config.local.php
 
 # Development mail log
 storage/
+
+# Photos uploaded by users (the folder itself is kept)
+backend/uploads/*
+!backend/uploads/.htaccess
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+
+# Logs, editor and system files
+*.log
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

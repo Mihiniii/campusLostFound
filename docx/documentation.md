@@ -223,7 +223,7 @@ Changes to an existing database are kept in `database/migrations/` and applied w
 | ------ | ------- |
 | `database/` | `schema.sql` for a new install and `migrations/` for changes |
 | `storage/` | `mail.log`, the emails written in development mode (not in git) |
-| `docx/` | This documentation and the README |
+| `docx/` | This documentation (the README is in the project root) |
 
 ## 7. Current limits
 
@@ -261,4 +261,4 @@ How the project protects users and data:
 
 ## 9. Running the project
 
-Setup steps (database, backend, frontend) are in the [README](README.md).
+Setup steps (database, backend, frontend) are in the [README](../README.md).
